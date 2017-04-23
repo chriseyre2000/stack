@@ -25,4 +25,8 @@ defmodule Stack.Server do
     {:reply, head, tail}
   end
 
+  def handle_cast({:push, item}, stack) do
+    {:noreply, [item | stack]}
+  end
+
 end
