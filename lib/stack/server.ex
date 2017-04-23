@@ -17,8 +17,8 @@ defmodule Stack.Server do
   use GenServer
 
 # External API
-  def start_link(state) do
-    GenServer.start_link __MODULE__, state, name: __MODULE__
+  def start_link(stash_pid) do
+    GenServer.start_link __MODULE__, stash_pid, name: __MODULE__
   end
 
   def pop do
@@ -29,19 +29,24 @@ defmodule Stack.Server do
     GenServer.cast __MODULE__, {:push, item}
   end
 
-# Implementation
-  def handle_call(:pop, _from, stack) do
+  # Internal details
+  def init(stash_pid) do
+    current_list = Stack.Stash.get_value stash_pid
+    {:ok, {current_list, stash_pid}}
+  end
+
+  def handle_call(:pop, _from, {stack, stash_pid}) do
     [head | tail] = stack
-    {:reply, head, tail}
+    {:reply, head, {tail, stash_pid}}
   end
 
-  def handle_cast({:push, item}, stack) do
-    {:noreply, [item | stack]}
+  def handle_cast({:push, item}, {stack, stash_pid}) do
+    {:noreply, {[item | stack], stash_pid}}
   end
 
-  def terminate(reason, state) do
-    IO.puts "Reason #{inspect reason} State #{inspect state}"
-    {:bye}
+  def terminate(reason, {stack, stash_pid}) do
+    IO.puts "Reason #{inspect reason} State #{inspect stack}"
+    Stack.Stash.save_value stash_pid, stack
   end
 
 end
