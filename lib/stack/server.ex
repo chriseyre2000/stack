@@ -16,10 +16,20 @@ defmodule Stack.Server do
 """
   use GenServer
 
-  def init(state) do
-    {:ok, state}
+# External API
+  def start_link(state) do
+    GenServer.start_link __MODULE__, state, name: __MODULE__
   end
 
+  def pop do
+    GenServer.call __MODULE__, :pop
+  end
+
+  def push(item) do
+    GenServer.cast __MODULE__, {:push, item}
+  end
+
+# Implementation
   def handle_call(:pop, _from, stack) do
     [head | tail] = stack
     {:reply, head, tail}
@@ -27,6 +37,11 @@ defmodule Stack.Server do
 
   def handle_cast({:push, item}, stack) do
     {:noreply, [item | stack]}
+  end
+
+  def terminate(reason, state) do
+    IO.puts "Reason #{inspect reason} State #{inspect state}"
+    {:bye}
   end
 
 end
